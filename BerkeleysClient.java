@@ -5,47 +5,70 @@ public class BerkeleysClient {
 
     public static void main(String[] args) {
 
-        String server = (args.length > 0) ? args[0] : "localhost";
+        String server = "localhost";
         int port = 8094;
 
         try (
-            Socket socket = new Socket(server, port);
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+
+                Socket socket =
+                        new Socket(server, port);
+
+                PrintWriter out =
+                        new PrintWriter(
+                                socket.getOutputStream(),
+                                true);
+
+                BufferedReader in =
+                        new BufferedReader(
+                                new InputStreamReader(
+                                        socket.getInputStream()))
         ) {
 
-            String request = in.readLine();
+            String request =
+                    in.readLine();
 
             if ("GetTime".equals(request)) {
 
-                long time = System.currentTimeMillis();
+                // Artificial time difference
+                long localTime =
+                        System.currentTimeMillis()
+                                + (long)
+                                (Math.random()
+                                        * 10000 - 5000);
 
-                // send local time
-                out.println(time);
+                System.out.println(
+                        "Local Time: "
+                                + localTime);
 
-                // receive offset
-                String response = in.readLine();
-                long offset = Long.parseLong(response.split(" ")[1]);
+                // Send local time
+                out.println(localTime);
 
-                long syncedTime = time + offset;
+                // Receive offset
+                String response =
+                        in.readLine();
 
-                System.out.println("Server offset: " + offset);
-                System.out.println("Synchronized time: " + syncedTime);
+                if (response.startsWith("SetTime")) {
 
-            } else if (request.startsWith("SetTime")) {
+                    long offset =
+                            Long.parseLong(
+                                    response.split(" ")[1]);
 
-                long offset = Long.parseLong(request.split(" ")[1]);
+                    long syncedTime =
+                            localTime + offset;
 
-                long newTime = System.currentTimeMillis() + offset;
+                    System.out.println(
+                            "Offset Received: "
+                                    + offset);
 
-                System.out.println("Adjusted time after sync: " + newTime);
-
-            } else {
-                System.out.println("Invalid request from server.");
+                    System.out.println(
+                            "Synchronized Time: "
+                                    + syncedTime);
+                }
             }
 
-        } catch (IOException e) {
-            System.err.println("Client error: " + e.getMessage());
+        } catch (Exception e) {
+
+            e.printStackTrace();
         }
     }
 }
